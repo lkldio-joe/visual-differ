@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+out/
+release/
+
+# Generated / cached data
+server/screenshots/
+data/
+config.generated.json
+
+# Secrets
+.env
+.env.*
+
+# OS / editor
+.DS_Store
+
+docs/
