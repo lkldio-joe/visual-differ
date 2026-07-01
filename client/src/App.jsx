@@ -8,6 +8,7 @@ import { useScrollSync } from './components/useScrollSync.js'
 import OverlayView from './components/OverlayView.jsx'
 import NotesPanel from './components/NotesPanel.jsx'
 import SettingsModal from './components/SettingsModal.jsx'
+import EditMappingsModal from './components/EditMappingsModal.jsx'
 
 const SIZES = ['desktop', 'tablet', 'mobile']
 const firstAvailable = (page) => SIZES.find((s) => page?.sizes?.[s]) || 'desktop'
@@ -18,6 +19,7 @@ export default function App() {
   const [config, setConfig] = useState(null)
   const [selection, setSelection] = useState(null)
   const [showSettings, setShowSettings] = useState(false)
+  const [showEdit, setShowEdit] = useState(false)
   const webviewRef = useRef(null)
   const imgScrollRef = useRef(null)
   const page = config?.pages.find((p) => p.id === selection?.pageId)
@@ -25,6 +27,7 @@ export default function App() {
 
   useScrollSync({
     webviewRef, imgScrollRef,
+    scale: selection?.scale ?? 1,
     enabled: !!(selection?.scrollSync && selection?.mode === 'side' && sizeData),
   })
 
@@ -41,7 +44,7 @@ export default function App() {
   useEffect(() => {
     if (!config) { setSelection(null); return }
     const page = config.pages[0]
-    setSelection({ pageId: page.id, size: firstAvailable(page), mode: 'side', scrollSync: true, opacity: 0.5 })
+    setSelection({ pageId: page.id, size: firstAvailable(page), mode: 'side', scrollSync: true, opacity: 0.5, scale: 1, vh: null, gridOn: false, grid: 8 })
   }, [config])
 
   function onCreated(cfg) {
@@ -50,21 +53,31 @@ export default function App() {
     setConfig(cfg)
   }
 
+  function onUpdated(cfg) {
+    setProjects((prev) => prev.map((p) => p.id === cfg.id ? { id: cfg.id, name: cfg.name } : p))
+    setConfig(cfg)
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
-      <ProjectBar projects={projects} activeId={activeId} onSelect={setActiveId} onCreated={onCreated} onOpenSettings={() => setShowSettings(true)} />
-      {config && selection && <Toolbar config={config} selection={selection} onChange={setSelection} />}
+      <ProjectBar projects={projects} activeId={activeId} onSelect={setActiveId} onCreated={onCreated}
+        onEdit={activeId ? () => setShowEdit(true) : null} onOpenSettings={() => setShowSettings(true)} />
+      {config && selection && <Toolbar config={config} selection={selection} onChange={setSelection}
+        onRefresh={() => { try { webviewRef.current?.reload() } catch {} }} />}
       <div style={{ flex: 1, minHeight: 0 }}>
         {!config || !selection ? <div style={{ padding: 8 }}>Add or select a project to begin.</div>
           : !sizeData ? <div style={{ padding: 8 }}>No design available for this size.</div>
           : selection.mode === 'side'
             ? <ComparePane projectId={config.id} page={page} size={selection.size} sizeData={sizeData}
+                scale={selection.scale} vh={selection.vh} gridOn={selection.gridOn} grid={selection.grid}
                 webviewRef={webviewRef} imgScrollRef={imgScrollRef} />
             : <OverlayView projectId={config.id} page={page} size={selection.size} sizeData={sizeData}
-                opacity={selection.opacity} webviewRef={webviewRef} />}
+                opacity={selection.opacity} scale={selection.scale} vh={selection.vh}
+                scrollSync={selection.scrollSync} webviewRef={webviewRef} />}
       </div>
       {config && selection && <NotesPanel projectId={config.id} pageId={selection.pageId} size={selection.size} />}
       <SettingsModal open={showSettings} onClose={() => setShowSettings(false)} />
+      <EditMappingsModal open={showEdit} projectId={activeId} onClose={() => setShowEdit(false)} onSaved={onUpdated} />
     </div>
   )
 }

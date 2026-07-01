@@ -10,6 +10,7 @@
     "dev:client": "vite client --port 5173",
     "build:client": "vite build client",
     "dev": "concurrently \"npm:dev:client\" \"cross-env VDIFF_DEV=1 npm:start\"",
+    "prestart": "npm run build:client",
     "start": "electron .",
     "dist": "electron-builder"
   },

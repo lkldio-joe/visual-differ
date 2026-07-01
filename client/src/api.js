@@ -24,6 +24,16 @@ export async function createProject(markdown) {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ markdown }),
   }))
 }
+export async function getInventory(projectId) {
+  const res = await fetch(`${apiBase()}/api/projects/${projectId}/inventory`)
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `Request failed: ${res.status}`)
+  return res.text()
+}
+export async function updateProject(projectId, markdown) {
+  return json(await fetch(`${apiBase()}/api/projects/${projectId}`, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ markdown }),
+  }))
+}
 export async function getNotes(projectId) { return json(await fetch(`${apiBase()}/api/projects/${projectId}/notes`)) }
 export async function saveNote(projectId, pageId, size, text) {
   return json(await fetch(`${apiBase()}/api/projects/${projectId}/notes`, {

@@ -32,6 +32,24 @@ export function createApp({ store, notesIo, settings, clientDir }) {
     catch { res.status(404).json({ error: 'project not found' }) }
   })
 
+  app.get('/api/projects/:id/inventory', (req, res) => {
+    try { res.type('text/markdown').send(store.getInventory(req.params.id)) }
+    catch { res.status(404).json({ error: 'project not found' }) }
+  })
+
+  app.put('/api/projects/:id', async (req, res) => {
+    const { markdown } = req.body || {}
+    if (!markdown) return res.status(400).json({ error: 'markdown is required' })
+    try { store.get(req.params.id) }
+    catch { return res.status(404).json({ error: 'project not found' }) }
+    try {
+      const config = await store.update({ id: req.params.id, markdown })
+      res.json(config)
+    } catch (err) {
+      res.status(400).json({ error: err.message })
+    }
+  })
+
   app.delete('/api/projects/:id', (req, res) => {
     store.remove(req.params.id)
     res.status(204).end()

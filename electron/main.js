@@ -49,7 +49,21 @@ async function createWindow() {
   }
 }
 
+// Local dev sites (e.g. Local by Flywheel *.local) use self-signed certs that
+// Electron's webview rejects by default, leaving a white screen. Trust them for
+// loopback / .local hosts only.
+function allowLocalSelfSignedCerts() {
+  app.on('certificate-error', (event, _webContents, url, _error, _certificate, callback) => {
+    let host = ''
+    try { host = new URL(url).hostname } catch { /* ignore */ }
+    const isLocal = host === 'localhost' || host === '127.0.0.1' || host === '::1' || host.endsWith('.local')
+    if (isLocal) { event.preventDefault(); callback(true) }
+    else callback(false)
+  })
+}
+
 app.whenReady().then(() => {
+  allowLocalSelfSignedCerts()
   stripFramingHeaders()
   createWindow()
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow() })

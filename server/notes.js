@@ -7,8 +7,9 @@ export function noteKey(pageId, size) {
 export function upsertNote(notes, pageId, size, text) {
   const next = { ...notes }
   const key = noteKey(pageId, size)
-  const clean = (text || '').trim()
-  if (clean) next[key] = clean
+  const value = text == null ? '' : String(text)
+  // Preserve the user's whitespace; only a blank/whitespace-only note clears it.
+  if (value.trim()) next[key] = value
   else delete next[key]
   return next
 }

@@ -13,7 +13,9 @@ function makeApp() {
   const store = {
     list: () => [{ id: 'demo', name: 'Demo' }],
     get: (id) => { if (id !== 'demo') throw new Error('project not found'); return config },
+    getInventory: (id) => { if (id !== 'demo') throw new Error('project not found'); return 'name: Demo\n## Home\nurl: https://demo.local/' },
     create: async () => config,
+    update: async ({ markdown }) => ({ ...config, updatedFrom: markdown }),
     remove: () => {},
     screenshotsDir: () => '/tmp/shots',
   }
@@ -48,6 +50,28 @@ describe('api', () => {
     const res = await request(makeApp()).post('/api/projects').send({ markdown: 'name: Demo\n## Home\nurl: https://x/' })
     expect(res.status).toBe(201)
     expect(res.body.id).toBe('demo')
+  })
+  it('GET /api/projects/:id/inventory returns the raw markdown', async () => {
+    const res = await request(makeApp()).get('/api/projects/demo/inventory')
+    expect(res.headers['content-type']).toContain('text/markdown')
+    expect(res.text).toContain('## Home')
+  })
+  it('GET /api/projects/:id/inventory returns 404 for unknown project', async () => {
+    const res = await request(makeApp()).get('/api/projects/nope/inventory')
+    expect(res.status).toBe(404)
+  })
+  it('PUT /api/projects/:id updates mappings from markdown', async () => {
+    const res = await request(makeApp()).put('/api/projects/demo').send({ markdown: 'name: Demo\n## Home\nmobile: https://x/' })
+    expect(res.status).toBe(200)
+    expect(res.body.updatedFrom).toContain('mobile:')
+  })
+  it('PUT /api/projects/:id requires markdown', async () => {
+    const res = await request(makeApp()).put('/api/projects/demo').send({})
+    expect(res.status).toBe(400)
+  })
+  it('PUT /api/projects/:id returns 404 for unknown project', async () => {
+    const res = await request(makeApp()).put('/api/projects/nope').send({ markdown: 'name: X\n## Home' })
+    expect(res.status).toBe(404)
   })
   it('notes round-trip and export', async () => {
     const app = makeApp()

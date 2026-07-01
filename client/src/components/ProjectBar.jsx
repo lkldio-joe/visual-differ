@@ -2,7 +2,7 @@
 import React, { useRef, useState } from 'react'
 import { createProject, templateUrl } from '../api.js'
 
-export default function ProjectBar({ projects, activeId, onSelect, onCreated, onOpenSettings }) {
+export default function ProjectBar({ projects, activeId, onSelect, onCreated, onEdit, onOpenSettings }) {
   const fileRef = useRef(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
@@ -35,6 +35,8 @@ export default function ProjectBar({ projects, activeId, onSelect, onCreated, on
         {busy ? 'Adding…' : 'Add Project'}
       </button>
       <input ref={fileRef} type="file" accept=".md,text/markdown" style={{ display: 'none' }} onChange={onFile} />
+
+      <button onClick={onEdit} disabled={busy || !onEdit}>Edit Mappings</button>
 
       <a href={templateUrl()} download="page-inventory.md"><button>Download Template</button></a>
       <button onClick={onOpenSettings}>Settings</button>

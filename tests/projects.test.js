@@ -61,4 +61,40 @@ describe('projects store', () => {
     const store = createProjectsStore({ projectsRoot: '/root', fs, makeClient: () => ({}) })
     await expect(store.create({ markdown: 'name: Empty' })).rejects.toThrow(/no pages/i)
   })
+
+  it('update adds a newly-mapped size and only renders the new screen', async () => {
+    const fs = memFs()
+    const renderPng = vi.fn(async () => Buffer.from([1]))
+    const makeClient = () => ({ getNodeWidth: async () => 1440, renderPng })
+    const store = createProjectsStore({ projectsRoot: '/root', fs, makeClient })
+
+    await store.create({ markdown: MD })
+    expect(renderPng).toHaveBeenCalledTimes(1) // desktop only
+
+    const withMobile = `${MD}\nmobile: https://figma.com/design/KEY/F?node-id=5-6`
+    const config = await store.update({ id: 'demo-site', markdown: withMobile })
+
+    expect(config.pages[0].sizes.mobile).toMatchObject({ width: 1440, image: 'home/mobile.png' })
+    expect(renderPng).toHaveBeenCalledTimes(2) // cached desktop skipped, mobile rendered
+    expect(store.getInventory('demo-site')).toBe(withMobile)
+  })
+
+  it('update re-renders a size whose figma mapping changed', async () => {
+    const fs = memFs()
+    const renderPng = vi.fn(async () => Buffer.from([1]))
+    const makeClient = () => ({ getNodeWidth: async () => 1440, renderPng })
+    const store = createProjectsStore({ projectsRoot: '/root', fs, makeClient })
+
+    await store.create({ markdown: MD })
+    const changed = MD.replace('node-id=1-2', 'node-id=9-9')
+    await store.update({ id: 'demo-site', markdown: changed })
+
+    expect(renderPng).toHaveBeenCalledTimes(2) // stale desktop pruned and re-rendered
+  })
+
+  it('update rejects an unknown project', async () => {
+    const fs = memFs()
+    const store = createProjectsStore({ projectsRoot: '/root', fs, makeClient: () => ({}) })
+    await expect(store.update({ id: 'nope', markdown: MD })).rejects.toThrow(/not found/i)
+  })
 })

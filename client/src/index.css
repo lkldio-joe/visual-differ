@@ -1,0 +1,25 @@
+/* Hide the scrollbar without removing scroll ability, so a scrollable column's
+   content box keeps its full width (the scrollbar gutter was shrinking the design
+   image ~25px narrower than the live view and throwing off its scaling). */
+.vdiff-noscrollbar {
+  scrollbar-width: none; /* Firefox */
+}
+.vdiff-noscrollbar::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none; /* Chromium */
+}
+
+@keyframes vdiff-spin {
+  to { transform: rotate(360deg); }
+}
+.vdiff-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #c7c7c7;
+  border-top-color: #333;
+  border-radius: 50%;
+  animation: vdiff-spin 0.7s linear infinite;
+  vertical-align: middle;
+}
